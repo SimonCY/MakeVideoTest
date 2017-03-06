@@ -23,31 +23,27 @@ CYSingletonM(CYVideoMaker)
 }
 
 
-//生成caches目录下不带后缀名的一个以时间戳为名的新文件路径
-- (NSString *)newTimeStrFilePath {
+
+- (NSString *)newMoviePath {
     
     //生成时间戳
     long recordTime = (NSInteger)[[NSDate date] timeIntervalSince1970]*1000;
     NSString *timeString = [NSString stringWithFormat:@"%ld",recordTime];
+    NSLog(@"timeString is %@",timeString);
     
     //生成路径
     NSArray *CachesPaths =NSSearchPathForDirectoriesInDomains(NSCachesDirectory,NSUserDomainMask,YES);
-    NSString *filePath =[[CachesPaths objectAtIndex:0] stringByAppendingPathComponent:timeString];
-    return filePath;
+    NSString *moviePath =[[CachesPaths objectAtIndex:0] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.mp4",timeString]];
+    return moviePath;
 }
 
-#pragma mark - 多张图片合成视频
 
-- (NSString *)newMP4FilePath{
-    return [NSString stringWithFormat:@"%@.mp4",[self newTimeStrFilePath]];
-}
-
-- (void)compressedMovieWithImages:(NSArray *)images completionHandlerOnMainThread:(void (^)(NSString *))handler {
+-(void)compressedMovieWithImages:(NSArray *)images completionHandlerOnMainThread:(void (^)(NSString *))handler {
     NSAssert(images.count, @"源图片数组为空");
     
     NSLog(@"开始合成");
     //NSString *moviePath = [[NSBundle mainBundle]pathForResource:@"Movie" ofType:@"mov"];
-    NSString *moviePath = [self newMP4FilePath];
+    NSString *moviePath = [self newMoviePath];
     
 
     
@@ -124,16 +120,6 @@ CYSingletonM(CYVideoMaker)
     }];
 }
 
-#pragma mark - 音频
-
-
-
-
-
-
-
-
-#pragma mark - buffer转UIImage
 - (CVPixelBufferRef)pixelBufferFromCGImage:(CGImageRef)image size:(CGSize)size
 {
     NSDictionary *options =[NSDictionary dictionaryWithObjectsAndKeys:
@@ -161,8 +147,5 @@ CYSingletonM(CYVideoMaker)
     
     return pxbuffer;
 }
-
-
-
 
 @end
