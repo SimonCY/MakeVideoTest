@@ -16,7 +16,7 @@ CYSingletonM(CYVideoMaker)
 
 - (instancetype)init {
     if (self = [super init]) {
-        self.targetSize = CGSizeMake(360, 360);
+        self.targetSize = CGSizeMake(720, 720);
         self.timeScale = 10;
     }
     return self;
@@ -48,10 +48,7 @@ CYSingletonM(CYVideoMaker)
     NSLog(@"开始合成");
     //NSString *moviePath = [[NSBundle mainBundle]pathForResource:@"Movie" ofType:@"mov"];
     NSString *moviePath = [self newMP4FilePath];
-    
 
-    
-    //    [selfwriteImages:imageArr ToMovieAtPath:moviePath withSize:sizeinDuration:4 byFPS:30];//第2中方法
     
     NSError *error =nil;
     
@@ -70,7 +67,7 @@ CYSingletonM(CYVideoMaker)
     
     AVAssetWriterInput *writerInput =[AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo outputSettings:videoSettings];
 
-    NSDictionary *sourcePixelBufferAttributesDictionary =[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:kCVPixelFormatType_32ARGB],kCVPixelBufferPixelFormatTypeKey,nil];
+    NSDictionary *sourcePixelBufferAttributesDictionary = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:kCVPixelFormatType_32ARGB],kCVPixelBufferPixelFormatTypeKey,nil];
         
         AVAssetWriterInputPixelBufferAdaptor *adaptor =[AVAssetWriterInputPixelBufferAdaptor
                                                         assetWriterInputPixelBufferAdaptorWithAssetWriterInput:writerInput
@@ -90,7 +87,7 @@ CYSingletonM(CYVideoMaker)
     
     [writerInput requestMediaDataWhenReadyOnQueue:dispatchQueue usingBlock:^{
         while([writerInput isReadyForMoreMediaData]) {
-            if(++frame >= images.count * 1) {
+            if(frame >= images.count) {
                 [writerInput markAsFinished];
 
                 [videoWriter finishWritingWithCompletionHandler:^{
@@ -107,7 +104,7 @@ CYSingletonM(CYVideoMaker)
             
             CVPixelBufferRef buffer =NULL;
             
-            int idx =frame/1;
+            int idx =frame;
             NSLog(@"idx==%d",idx);
             
             buffer =(CVPixelBufferRef)[self pixelBufferFromCGImage:[[images objectAtIndex:idx] CGImage] size:self.targetSize];
@@ -115,33 +112,65 @@ CYSingletonM(CYVideoMaker)
             if (buffer) {
                 if(![adaptor appendPixelBuffer:buffer withPresentationTime:CMTimeMake(frame,self.timeScale)]) {
                     NSLog(@"FAIL");
+                    
                 } else {
                     NSLog(@"OK");
                     CFRelease(buffer);
                 }
             }
+            frame++;
         }
     }];
 }
 
-#pragma mark - 音频
+#pragma mark - buffer转UIImage
+- (CVPixelBufferRef)pixelBufferFromCGImage:(CGImageRef)image size:(CGSize)size
+{
+    NSDictionary *options =[NSDictionary dictionaryWithObjectsAndKeys:
+                            [NSNumber numberWithBool:YES],kCVPixelBufferCGImageCompatibilityKey,
+                            [NSNumber numberWithBool:YES],kCVPixelBufferCGBitmapContextCompatibilityKey,nil];
+    CVPixelBufferRef pxbuffer =NULL;
+    CVReturn status =CVPixelBufferCreate(kCFAllocatorDefault,size.width,size.height,kCVPixelFormatType_32ARGB,(__bridge CFDictionaryRef) options,&pxbuffer);
+    
+    NSParameterAssert(status ==kCVReturnSuccess && pxbuffer !=NULL);
+    
+    CVPixelBufferLockBaseAddress(pxbuffer,0);
+    void *pxdata =CVPixelBufferGetBaseAddress(pxbuffer);
+    NSParameterAssert(pxdata !=NULL);
+    
+    CGColorSpaceRef rgbColorSpace=CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(pxdata,size.width,size.height,8,4*size.width,rgbColorSpace,kCGImageAlphaPremultipliedFirst);
+    NSParameterAssert(context);
+    
+    CGContextDrawImage(context,CGRectMake(0,0,size.width,size.height),image);//CGImageGetWidth(image),CGImageGetHeight(image)), image);
+    
+    CGColorSpaceRelease(rgbColorSpace);
+    CGContextRelease(context);
+    
+    CVPixelBufferUnlockBaseAddress(pxbuffer,0);
+    
+    return pxbuffer;
+}
 
+#pragma mark - 音频
+/*
+ 
 //抽取原视频的音频与需要的音乐混合
 -(void)addmusic:(id)sender
 {
     
     
     AVMutableComposition *composition =[AVMutableComposition composition];
-    NSMutableArray *audioMixParams =[[NSMutableArray alloc]initWithObjects:nil];
+    NSMutableArray *audioMixParams =[[NSMutableArray alloc]init];
     
     //录制的视频
-    NSURL *video_inputFileUrl =[NSURL fileURLWithPath:self.videoPath];
+    NSURL *video_inputFileUrl = [NSURL fileURLWithPath:self.videoPath];
     AVURLAsset *songAsset =[AVURLAsset URLAssetWithURL:video_inputFileUrl options:nil];
     CMTime startTime =CMTimeMakeWithSeconds(0,songAsset.duration.timescale);
     CMTime trackDuration =songAsset.duration;
     
     //获取视频中的音频素材
-    [self setUpAndAddAudioAtPath:video_inputFileUrltoComposition:composition start:startTimedura:trackDuration offset:CMTimeMake(14*44100,44100)];
+    [self setUpAndAddAudioAtPath:video_inputFileUrl toComposition:composition start:startTime dura:trackDuration offset:CMTimeMake(14*44100,44100)];
     
     //本地要插入的音乐
     NSString *bundleDirectory =[[NSBundle mainBundle]bundlePath];
@@ -300,39 +329,12 @@ CYSingletonM(CYVideoMaker)
     return movDirectory;
     
 }
+*/
 
 
 
 
 
-#pragma mark - buffer转UIImage
-- (CVPixelBufferRef)pixelBufferFromCGImage:(CGImageRef)image size:(CGSize)size
-{
-    NSDictionary *options =[NSDictionary dictionaryWithObjectsAndKeys:
-                            [NSNumber numberWithBool:YES],kCVPixelBufferCGImageCompatibilityKey,
-                            [NSNumber numberWithBool:YES],kCVPixelBufferCGBitmapContextCompatibilityKey,nil];
-    CVPixelBufferRef pxbuffer =NULL;
-    CVReturn status =CVPixelBufferCreate(kCFAllocatorDefault,size.width,size.height,kCVPixelFormatType_32ARGB,(__bridge CFDictionaryRef) options,&pxbuffer);
-    
-    NSParameterAssert(status ==kCVReturnSuccess && pxbuffer !=NULL);
-    
-    CVPixelBufferLockBaseAddress(pxbuffer,0);
-    void *pxdata =CVPixelBufferGetBaseAddress(pxbuffer);
-    NSParameterAssert(pxdata !=NULL);
-    
-    CGColorSpaceRef rgbColorSpace=CGColorSpaceCreateDeviceRGB();
-    CGContextRef context = CGBitmapContextCreate(pxdata,size.width,size.height,8,4*size.width,rgbColorSpace,kCGImageAlphaPremultipliedFirst);
-    NSParameterAssert(context);
-    
-    CGContextDrawImage(context,CGRectMake(0,0,size.width,size.height),image);//CGImageGetWidth(image),CGImageGetHeight(image)), image);
-    
-    CGColorSpaceRelease(rgbColorSpace);
-    CGContextRelease(context);
-    
-    CVPixelBufferUnlockBaseAddress(pxbuffer,0);
-    
-    return pxbuffer;
-}
 
 
 

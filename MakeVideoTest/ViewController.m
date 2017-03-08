@@ -110,7 +110,9 @@
     
     [self.videoMaker compressedMovieWithImages:self.images completionHandlerOnMainThread:^(NSString *videoPath) {
         
-//        UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, @selector(videoDidFinishSaving), nil);
+        dispatch_async(dispatch_get_global_queue(0, 0), ^{
+            
+        
         NSLog(@"xianc %d",[[NSThread currentThread]isMainThread]);
         ALAssetsLibrary *library  = [[ALAssetsLibrary alloc] init];
         [library writeVideoAtPathToSavedPhotosAlbum:[NSURL fileURLWithPath:videoPath]  completionBlock:^(NSURL *assetURL, NSError *error) {
@@ -123,6 +125,7 @@
 
             }
         }];
+        });
     }];
 }
 
