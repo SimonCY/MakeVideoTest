@@ -123,7 +123,7 @@ CYSingletonM(CYVideoMaker)
     }];
 }
 
-#pragma mark - buffer转UIImage
+#pragma mark - UIImage转buffer
 - (CVPixelBufferRef)pixelBufferFromCGImage:(CGImageRef)image size:(CGSize)size
 {
     NSDictionary *options =[NSDictionary dictionaryWithObjectsAndKeys:
