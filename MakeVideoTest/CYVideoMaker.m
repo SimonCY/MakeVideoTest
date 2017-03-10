@@ -153,8 +153,8 @@ CYSingletonM(CYVideoMaker)
 }
 
 #pragma mark - 音频
-/*
- 
+
+ /*
 //抽取原视频的音频与需要的音乐混合
 -(void)addmusic:(id)sender
 {
@@ -177,7 +177,7 @@ CYSingletonM(CYVideoMaker)
     NSString *path = [bundleDirectory stringByAppendingPathComponent:@"30secs.mp3"];
     NSURL *assetURL2 =[NSURL fileURLWithPath:path];
     //获取设置完的本地音乐素材
-    [self setUpAndAddAudioAtPath:assetURL2toComposition:compositionstart:startTimedura:trackDurationoffset:CMTimeMake(0,44100)];
+    [self setUpAndAddAudioAtPath:assetURL2 toComposition:composition start:startTime dura:trackDuration offset:CMTimeMake(0,44100)];
     
     //创建一个可变的音频混合
     AVMutableAudioMix *audioMix =[AVMutableAudioMix audioMix];
@@ -231,7 +231,7 @@ CYSingletonM(CYVideoMaker)
     NSFileManager *fileMgr =[NSFileManager defaultManager];
     NSString *documentsDirectory =[NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
     NSString *videoOutputPath =[documentsDirectory stringByAppendingPathComponent:@"test_output.mp4"];
-    if ([fileMgr removeItemAtPath:videoOutputPatherror:&error]!=YES) {
+    if ([fileMgr removeItemAtPath:videoOutputPath error:&error]!=YES) {
         NSLog(@"无法删除文件，错误信息：%@",[error localizedDescription]);
     }
     
@@ -239,28 +239,28 @@ CYSingletonM(CYVideoMaker)
     NSURL   *audio_inputFileUrl =self.mixURL;
     
     //视频来源路径
-    NSURL   *video_inputFileUrl = [NSURLfileURLWithPath:self.videoPath];
+    NSURL   *video_inputFileUrl = [NSURL fileURLWithPath:self.videoPath];
     
     //最终合成输出路径
-    NSString *outputFilePath =[documentsDirectorystringByAppendingPathComponent:@"final_video.mp4"];
-    NSURL   *outputFileUrl = [NSURLfileURLWithPath:outputFilePath];
+    NSString *outputFilePath =[documentsDirectory stringByAppendingPathComponent:@"final_video.mp4"];
+    NSURL   *outputFileUrl = [NSURL fileURLWithPath:outputFilePath];
     
-    if([[NSFileManagerdefaultManager]fileExistsAtPath:outputFilePath])
-        [[NSFileManagerdefaultManager]removeItemAtPath:outputFilePatherror:nil];
+    if([[NSFileManager defaultManager]fileExistsAtPath:outputFilePath])
+        [[NSFileManager defaultManager]removeItemAtPath:outputFilePath error:nil];
     
     CMTime nextClipStartTime =kCMTimeZero;
     
     //创建可变的音频视频组合
-    AVMutableComposition* mixComposition =[AVMutableCompositioncomposition];
+    AVMutableComposition* mixComposition =[AVMutableComposition composition];
     
     //视频采集
-    AVURLAsset* videoAsset =[[AVURLAssetalloc]initWithURL:video_inputFileUrloptions:nil];
+    AVURLAsset* videoAsset =[[AVURLAsset alloc]initWithURL:video_inputFileUrl options:nil];
     CMTimeRange video_timeRange =CMTimeRangeMake(kCMTimeZero,videoAsset.duration);
-    AVMutableCompositionTrack*a_compositionVideoTrack = [mixCompositionaddMutableTrackWithMediaType:AVMediaTypeVideopreferredTrackID:kCMPersistentTrackID_Invalid];
-    [a_compositionVideoTrackinsertTimeRange:video_timeRangeofTrack:[[videoAssettracksWithMediaType:AVMediaTypeVideo]objectAtIndex:0]atTime:nextClipStartTimeerror:nil];
+    AVMutableCompositionTrack*a_compositionVideoTrack = [mixComposition addMutableTrackWithMediaType:AVMediaTypeVideop referredTrackID:kCMPersistentTrackID_Invalid];
+    [a_compositionVideoTrack insertTimeRange:video_timeRange ofTrack:[[videoAsset tracksWithMediaType:AVMediaTypeVideo]objectAtIndex:0]atTime:nextClipStartTimeerror:nil];
     
     //声音采集
-    AVURLAsset* audioAsset =[[AVURLAssetalloc]initWithURL:audio_inputFileUrloptions:nil];
+    AVURLAsset* audioAsset =[[AVURLAsset alloc]initWithURL:audio_inputFileUrl options:nil];
     CMTimeRange audio_timeRange =CMTimeRangeMake(kCMTimeZero,videoAsset.duration);//声音长度截取范围==视频长度
     AVMutableCompositionTrack*b_compositionAudioTrack = [mixCompositionaddMutableTrackWithMediaType:AVMediaTypeAudiopreferredTrackID:kCMPersistentTrackID_Invalid];
     [b_compositionAudioTrackinsertTimeRange:audio_timeRangeofTrack:[[audioAssettracksWithMediaType:AVMediaTypeAudio]objectAtIndex:0]atTime:nextClipStartTimeerror:nil];
@@ -287,7 +287,7 @@ CYSingletonM(CYVideoMaker)
 }
 
 //通过文件路径建立和添加音频素材
-- (void)setUpAndAddAudioAtPath:(NSURL*)assetURLtoComposition:(AVMutableComposition*)composition start:(CMTime)startdura:(CMTime)duraoffset:(CMTime)offset{
+- (void)setUpAndAddAudioAtPath:(NSURL*)assetURL toComposition:(AVMutableComposition*)composition start:(CMTime)start dura:(CMTime)dura offset:(CMTime)offset{
     
     AVURLAsset *songAsset =[AVURLAssetURLAssetWithURL:assetURLoptions:nil];
     
